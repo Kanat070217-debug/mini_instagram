@@ -3,7 +3,8 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_request
 from models import db, Post, User, Like
 
-posts_bp = Blueprint("posts", __name__, url_prefix="/posts")
+posts_bp = Blueprint("posts", __name__)
+
 
 
 def error_response(code: str, message: str, http_status: int):
