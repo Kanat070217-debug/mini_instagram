@@ -60,7 +60,7 @@ def list_posts():
             "created_at": p.created_at.isoformat() + "Z",
             "media": [],
             "stats": {
-                "likes_count": len(p.likes),
+                "likes_count": 0,
                 "comments_count": 0
             },
             "viewer": {}
