@@ -3,8 +3,8 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_request
 from models import db, Post, User, Like
 
+# МҰНДА ЕНДІ ЕШҚАНДАЙ url_prefix ЖОҚ!
 posts_bp = Blueprint("posts", __name__)
-
 
 
 def error_response(code: str, message: str, http_status: int):
@@ -16,6 +16,7 @@ def error_response(code: str, message: str, http_status: int):
     }), http_status
 
 
+# Пост жасау (POST /posts)
 @posts_bp.route("", methods=["POST"])
 @jwt_required()
 def create_post():
@@ -40,52 +41,36 @@ def create_post():
     }), 201
 
 
+# Барлық посттарды көру (GET /posts)
 @posts_bp.route("", methods=["GET"])
 def list_posts():
-    posts = Post.query.order_by(Post.created_at.desc(), Post.id.desc()).all()
-
-    viewer_id = None
-    try:
-        verify_jwt_in_request(optional=True)
-        viewer_id = int(get_jwt_identity())
-    except Exception:
-        viewer_id = None
+    # Қарапайым вариант: бар посттардың бәрін қайтару
+    posts = Post.query.order_by(Post.created_at.desc()).all()
 
     items = []
     for p in posts:
-        author = User.query.get(p.author_id)
-        likes_count = Like.query.filter_by(post_id=p.id).count()
-        liked_by_me = False
-        if viewer_id is not None:
-            liked_by_me = Like.query.filter_by(
-                post_id=p.id, user_id=viewer_id
-            ).first() is not None
-
         items.append({
             "id": p.id,
             "caption": p.caption,
-            "created_at": p.created_at.isoformat() + "Z",
             "author": {
-                "id": author.id,
-                "username": author.username,
-                "avatar_url": None
+                "id": p.author.id,
+                "username": p.author.username,
+                "avatar_url": p.author.avatar_url if hasattr(p.author, "avatar_url") else None
             },
+            "created_at": p.created_at.isoformat() + "Z",
             "media": [],
             "stats": {
-                "likes_count": likes_count,
+                "likes_count": len(p.likes),
                 "comments_count": 0
             },
-            "viewer": (
-                {"liked_by_me": liked_by_me}
-                if viewer_id is not None else {}
-            )
+            "viewer": {}
         })
 
     return jsonify({
         "items": items,
         "paging": {
-            "limit": len(items),
             "offset": 0,
+            "limit": len(items),
             "next_offset": None
         }
-    }), 200
+    })
